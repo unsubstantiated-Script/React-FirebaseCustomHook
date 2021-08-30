@@ -7,29 +7,28 @@ import { useHTTP } from "./hooks/useHTTP";
 function App() {
 	const [tasks, setTasks] = useState([]);
 
-	const transformTasks = (tasksObj) => {
-		const loadedTasks = [];
+	//use the useCallback to avoid looping stuff when manipulating state outside of the component or useEffect
+	//Guaranteeing this doesn't change all of the time
 
-		for (const taskKey in tasksObj) {
-			loadedTasks.push({ id: taskKey, text: tasksObj[taskKey].text });
-		}
-		setTasks(loadedTasks);
-	};
-
-	const {
-		isLoading,
-		error,
-		sendRequest: fetchTasks,
-	} = useHTTP(
-		{
-			url: "https://tasklist-tester-default-rtdb.firebaseio.com/tasks.json",
-		},
-		transformTasks,
-	);
+	//This object is okay to change all the time
+	const { isLoading, error, sendRequest: fetchTasks } = useHTTP();
 
 	useEffect(() => {
-		fetchTasks();
-	}, []);
+		const transformTasks = (tasksObj) => {
+			const loadedTasks = [];
+
+			for (const taskKey in tasksObj) {
+				loadedTasks.push({ id: taskKey, text: tasksObj[taskKey].text });
+			}
+			setTasks(loadedTasks);
+		};
+		fetchTasks(
+			{
+				url: "https://tasklist-tester-default-rtdb.firebaseio.com/tasks.json",
+			},
+			transformTasks,
+		);
+	}, [fetchTasks]);
 
 	const taskAddHandler = (task) => {
 		setTasks((prevTasks) => prevTasks.concat(task));
